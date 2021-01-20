@@ -14,11 +14,12 @@ local skinningLine = 0
 local herbingLine = 0
 local minningLine = 0
 
+local getProfHasRun = false
+
 --Keep Track of Tooltip text to check if it has updated
 local GameTooltipLine1 = nil
 local GameTooltipLine2 = nil
 local GameTooltipLine3 = nil
-
 
 local function PrintSkill(skill)
     if skill == "Skinning" then
@@ -61,6 +62,8 @@ local function GetProf()
         PrintSkill("Herbalism")
         PrintSkill("Mining")
     end
+
+    getProfHasRun = true
 end
 
 local function UpdateSkill(skill)
@@ -96,9 +99,6 @@ local function CAGCHandler(parameter)
         print("The Parameter was: " .. parameter)
     end
 end
-
-GetProf()
-print(TOOLTIP_UPDATE_TIME)
 
 local function SkinningRankNeeded(level)
     local rankNeeded
@@ -302,6 +302,9 @@ end
 
 -- CreateEvent when GameToolTip Shows
 local function ToolTipOnShow()
+    if not getProfHasRun then
+        GetProf()
+    end
     GameTooltipChangeHandler("Tooltip OnShow Event fired!")
 end
 
