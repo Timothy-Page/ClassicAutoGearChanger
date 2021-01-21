@@ -1,7 +1,7 @@
 ## Interface: 11306
 ## Title: ClassicAutoGearChanger
 ## Author: Tranzalore
-## Version: 1.0.2
+## Version: 1.0.3
 ## Dependencies: ItemRack
 
 main.lua
