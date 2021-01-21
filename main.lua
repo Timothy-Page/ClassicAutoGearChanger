@@ -283,7 +283,7 @@ local function MiningHandler()
 end
 
 local function GameTooltipChangeHandler(debugString)
-    if not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) then
+    if getProfHasRun and not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) then
         if (inDebugMode) then
             DEFAULT_CHAT_FRAME:AddMessage(debugString)
         end
