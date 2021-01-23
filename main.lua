@@ -5,14 +5,17 @@ local inDeepDebugMode = false
 local isSkinner = false
 local isHerber = false
 local isMinner = false
+local isFishing = false
 
 local skinningRank = 0
 local herbingRank = 0
 local minningRank = 0
+local fishingRank = 0
 
 local skinningLine = 0
 local herbingLine = 0
 local minningLine = 0
+local fishingLine = 0
 
 local getProfHasRun = false
 
@@ -28,8 +31,10 @@ local function PrintSkill(skill)
         print("Herbalism: " .. tostring(isHerber) .. ", Rank: " .. herbingRank)
     elseif skill == "Mining" then
         print("Mining: " .. tostring(isMinner) .. ", Rank: " .. minningRank)
+    elseif skill == "Fishing" then
+        print("Fishing: " .. tostring(isFishing) .. ", Rank: " .. fishingRank)
     else
-        print(skill .. " is not a recgonised skill. Please use Skinning, Herbalism or Mining")
+        print(skill .. " is not a recgonised skill. Please use Skinning, Herbalism, Fishing or Mining")
     end
 end
 
@@ -52,6 +57,11 @@ local function GetProf()
                 minningRank = skillRank
                 minningLine = i
             end
+            if (skillName == "Fishing") then
+                isFishing = true
+                fishingRank = skillRank
+                fishingLine = i
+            end
             if (string.len(skillName) > 0 and inDeepDebugMode) then
                 print(skillName)
             end
@@ -61,6 +71,7 @@ local function GetProf()
         PrintSkill("Skinning")
         PrintSkill("Herbalism")
         PrintSkill("Mining")
+        PrintSkill("Fishing")
     end
 
     getProfHasRun = true
@@ -76,6 +87,9 @@ local function UpdateSkill(skill)
     elseif skill == "Mining" and isMinner then
         local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription = GetSkillLineInfo(minningLine)
         miningRank = skillRank
+    elseif skill == "Fishing" and isFishing then
+        local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType, skillDescription = GetSkillLineInfo(fishingLine)
+        fishingRank = skillRank
     end
 end
 
@@ -237,6 +251,96 @@ local function MiningRankNeeded(ore)
     return rankNeeded
 end
 
+local function FishingRankNeeded(pool)
+    local rankNeeded = 305
+
+    return rankNeeded
+end
+
+local fishingPools = {
+    "Floating Wreckage",
+    "Patch of Elemental Water",
+    "Floating Debris",
+    "Oil Spill",
+    "Firefin Snapper School",
+    "Greater Sagefish School",
+    "Oily Blackmouth School",
+    "Sagefish School",
+    "School of Deviate Fish",
+    "Stonescale Eel Swarm",
+    "Muddy Churning Water",
+    "Highland Mixed School",
+    "Pure Water",
+    "Bluefish School",
+    "Feltail School",
+    "Brackish Mixed School",
+    "Mudfish School",
+    "School of Darter",
+    "Sporefish School",
+    "Steam Pump Flotsam",
+    "School of Tastyfish",
+    "Borean Man O' War School",
+    "Deep Sea Monsterbelly School",
+    "Dragonfin Angelfish School",
+    "Fangtooth Herring School",
+    "Floating Wreckage Pool",
+    "Glacial Salmon School",
+    "Glassfin Minnow School",
+    "Imperial Manta Ray School",
+    "Moonglow Cuttlefish School",
+    "Musselback Sculpin School",
+    "Nettlefish School",
+    "Strange Pool",
+    "Schooner Wreckage",
+    "Waterlogged Wreckage Pool",
+    "Bloodsail Wreckage Pool",
+    "Mixed Ocean School",
+    -- Begin tediuous prefix mapping
+    "Lesser Sagefish School",
+    "Lesser Oily Blackmouth School",
+    "Sparse Oily Blackmouth School",
+    "Abundant Oily Blackmouth School",
+    "Teeming Oily Blackmouth School",
+    "Lesser Firefin Snapper School",
+    "Sparse Firefin Snapper School",
+    "Abundant Firefin Snapper School",
+    "Teeming Firefin Snapper School",
+    "Lesser Floating Debris",
+    "Sparse Schooner Wreckage",
+    "Abundant Bloodsail Wreckage",
+    "Teeming Floating Wreckage",
+    "Albino Cavefish School",
+    "Algaefin Rockfish School",
+    "Blackbelly Mudfish School",
+    "Fathom Eel Swarm",
+    "Highland Guppy School",
+    "Mountain Trout School",
+    "Pool of Fire",
+    "Shipwreck Debris",
+    "Deepsea Sagefish School",
+    "Fishing Bobber"
+}
+
+local function has_value (tab, val)
+    for index, value in ipairs(tab) do
+        if value == val then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function isFishingPool(textString)
+    local isFishingPool = false
+
+    if has_value(fishingPools, textString) then
+        isFishingPool = true
+    end
+
+    return isFishingPool
+end
+
 local function SkinningHandler()
     if (isSkinner) then
         UpdateSkill("Skinning")
@@ -282,6 +386,21 @@ local function MiningHandler()
     end
 end
 
+local function FishingHandler()
+    if (isFishing) then
+        UpdateSkill("Fishing")
+        if(isFishingPool(GameTooltipLine1) and FishingRankNeeded(GameTooltipLine1) > fishingRank) then
+            if not (IsSetEquipped("Fishing")) then
+                ToggleSet("Fishing")
+            end
+        else
+            if (IsSetEquipped("Fishing")) then
+                ToggleSet("Fishing")
+            end
+        end
+    end
+end
+
 local function GameTooltipChangeHandler(debugString)
     if getProfHasRun and not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) then
         if (inDebugMode) then
@@ -297,6 +416,7 @@ local function GameTooltipChangeHandler(debugString)
         SkinningHandler()
         HerbalismHandler()
         MiningHandler()
+        FishingHandler()
     end
 end
 
