@@ -19,6 +19,8 @@ local fishingLine = 0
 
 local getProfHasRun = false
 
+local isCasting = false
+
 --Keep Track of Tooltip text to check if it has updated
 local GameTooltipLine1 = nil
 local GameTooltipLine2 = nil
@@ -401,35 +403,37 @@ local function FishingHandler()
     end
 end
 
-local function GameTooltipChangeHandler(debugString)
-    if getProfHasRun and not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) then
+local function GameTooltipChangeHandler(forceRunHandler, debugString)
+    if getProfHasRun and (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
         if (inDebugMode) then
             DEFAULT_CHAT_FRAME:AddMessage(debugString)
         end
-
+        
         -- update local variables for tooltiptext
         GameTooltipLine1 = GameTooltipTextLeft1:GetText()
         GameTooltipLine2 = GameTooltipTextLeft2:GetText()
         GameTooltipLine3 = GameTooltipTextLeft3:GetText()
-
-        -- Call the Handlers for each Profession
-        SkinningHandler()
-        HerbalismHandler()
-        MiningHandler()
-        FishingHandler()
+        
+        if not isCasting then
+            -- Call the Handlers for each Profession
+            SkinningHandler()
+            HerbalismHandler()
+            MiningHandler()
+            FishingHandler()
+        end
     end
 end
 
 -- CreateEvent when GameToolTip Shows
 local function ToolTipOnShow()
-    GameTooltipChangeHandler("Tooltip OnShow Event fired!")
+    GameTooltipChangeHandler(false, "Tooltip OnShow Event fired!")
 end
 
 GameTooltip:HookScript("OnShow", ToolTipOnShow)
 
 -- CreateEvent when GameToolTip Hides
 local function ToolTipOnHide()
-    GameTooltipChangeHandler("Tooltip OnHide Event fired!")
+    GameTooltipChangeHandler(false, "Tooltip OnHide Event fired!")
 end
 
 GameTooltip:HookScript("OnHide", ToolTipOnHide)
@@ -437,7 +441,7 @@ GameTooltip:HookScript("OnHide", ToolTipOnHide)
 
 -- CreateEvent when GameToolTip Update
 local function ToolTipOnUpdate()
-    GameTooltipChangeHandler("Tooltip OnUpdate Event fired!")
+    GameTooltipChangeHandler(false, "Tooltip OnUpdate Event fired!")
 end
 
 GameTooltip:HookScript("OnUpdate", ToolTipOnUpdate)
@@ -480,7 +484,30 @@ local EnterWorldFrame = CreateFrame("Frame")
 EnterWorldFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 EnterWorldFrame:SetScript("OnEvent", initialiseProfessions)
 
+-- Check gear set when cast finishes
+local function StopCastingHandler(self, event, ...)
+    if event == "UNIT_SPELLCAST_STOP" or event == "UNIT_SPELLCAST_CHANNEL_STOP" then
+        unitTarget = ...
+        if unitTarget == "player" then
+            isCasting = false
+            GameTooltipChangeHandler(true, "Cast Stopped")
+        end
+    end
+    if event == "UNIT_SPELLCAST_START" or event == "UNIT_SPELLCAST_CHANNEL_START" then
+        unitTarget = ...
+        if unitTarget == "player" then
+            isCasting = true
+            print("Cast Started")
+        end
+    end
+end
 
+local StopCastingFrame = CreateFrame("Frame")
+StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_STOP")
+StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_START")
+StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+StopCastingFrame:SetScript("OnEvent", StopCastingHandler)
 
 -- Register slash commands
 SlashCmdList["CAGC"] = CAGCHandler;
