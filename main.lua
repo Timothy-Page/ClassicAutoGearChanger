@@ -435,7 +435,7 @@ local function MountHandler()
 end
 
 local function UpdateGear()
-    print("UpdateGear Called")
+
     local equipSkinning = SkinningHandler()
     local equipHerbalism = HerbalismHandler()
     local equipMining = MiningHandler()
@@ -543,7 +543,6 @@ local function StopCastingHandler(self, event, ...)
         unitTarget = ...
         if unitTarget == "player" then
             isCasting = true
-            print("Cast Started")
         end
     end
 end
