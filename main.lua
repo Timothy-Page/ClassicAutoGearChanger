@@ -21,6 +21,40 @@ local getProfHasRun = false
 
 local isCasting = false
 
+local mounted = IsMounted()
+
+local currentSet = "None"
+
+--Create delay function
+local waitTable = {}
+local waitFrame = nil
+
+function cagc_wait(delay, func, ...)
+  if(type(delay) ~= "number" or type(func) ~= "function") then
+    return false
+  end
+  if not waitFrame then
+    waitFrame = CreateFrame("Frame", nil, UIParent)
+    waitFrame:SetScript("OnUpdate", function (self, elapse)
+      for i = 1, #waitTable do
+        local waitRecord = tremove(waitTable, i)
+        local d = tremove(waitRecord, 1)
+        local f = tremove(waitRecord, 1)
+        local p = tremove(waitRecord, 1)
+        if d > elapse then
+          tinsert(waitTable, i, {d - elapse, f, p})
+          i = i + 1
+        else
+          i = i - 1
+          f(unpack(p))
+        end
+      end
+    end)
+  end
+  tinsert(waitTable, {delay, func, {...}})
+  return true
+end
+
 --Keep Track of Tooltip text to check if it has updated
 local GameTooltipLine1 = nil
 local GameTooltipLine2 = nil
@@ -347,13 +381,9 @@ local function SkinningHandler()
     if (isSkinner) then
         UpdateSkill("Skinning")
         if(GameTooltipLine3 == "Skinnable" and SkinningRankNeeded(UnitLevel("Mouseover")) > skinningRank) then
-            if not (IsSetEquipped("Skinning")) then
-                ToggleSet("Skinning")
-            end
+            return true
         else
-            if (IsSetEquipped("Skinning")) then
-                ToggleSet("Skinning")
-            end
+            return false
         end
     end
 end
@@ -362,13 +392,9 @@ local function HerbalismHandler()
     if (isHerber) then
         UpdateSkill("Herbalism")
         if(GameTooltipLine2 == "Herbalism" and HerbalismRankNeeded(GameTooltipLine1) > herbingRank) then
-            if not (IsSetEquipped("Herbalism")) then
-                ToggleSet("Herbalism")
-            end
+            return true
         else
-            if (IsSetEquipped("Herbalism")) then
-                ToggleSet("Herbalism")
-            end
+            return false
         end
     end
 end
@@ -377,13 +403,9 @@ local function MiningHandler()
     if (isMinner) then
         UpdateSkill("Mining")
         if(GameTooltipLine2 == "Mining" and MiningRankNeeded(GameTooltipLine1) > minningRank) then
-            if not (IsSetEquipped("Mining")) then
-                ToggleSet("Mining")
-            end
+            return true
         else
-            if (IsSetEquipped("Mining")) then
-                ToggleSet("Mining")
-            end
+            return false
         end
     end
 end
@@ -392,34 +414,87 @@ local function FishingHandler()
     if (isFishing) then
         UpdateSkill("Fishing")
         if(isFishingPool(GameTooltipLine1) and FishingRankNeeded(GameTooltipLine1) > fishingRank) then
-            if not (IsSetEquipped("Fishing")) then
-                ToggleSet("Fishing")
-            end
+            return true
         else
-            if (IsSetEquipped("Fishing")) then
-                ToggleSet("Fishing")
-            end
+            return false
         end
     end
 end
 
+local function MountHandler()
+    if IsMounted() and not UnitOnTaxi("player") then
+        local inInstance, instanceType = IsInInstance()
+        if instanceType == "pvp" or instanceType == "arena" or instanceType == "party" or instanceType == "raid" then
+            return false
+        else
+            return true
+        end
+    else
+        return false
+    end
+end
+
+local function UpdateGear()
+    print("UpdateGear Called")
+    local equipSkinning = SkinningHandler()
+    local equipHerbalism = HerbalismHandler()
+    local equipMining = MiningHandler()
+    local equipFishing = FishingHandler()
+    local equipMount = MountHandler()
+
+    local toEquipSet = "None"
+
+    if equipMount then
+        toEquipSet = "Mount"
+    elseif equipSkinning then
+        toEquipSet = "Skinning"
+    elseif equipHerbalism then
+        toEquipSet = "Herbalism"
+    elseif equipMining then
+        toEquipSet = "Mining"
+    elseif equipFishing then
+        toEquipSet = "Fishing"
+    end
+    
+    if not (toEquipSet == currentSet) and not (currentSet == "None") then
+        if inDebugMode then
+            print("Unequiping " .. currentSet)
+        end
+        UnequipSet(currentSet)
+        currentSet = "None"
+    end
+
+    if not (toEquipSet == currentSet) then
+        if inDebugMode then
+          print("Equiping " .. toEquipSet)
+        end
+        EquipSet(toEquipSet)
+        currentSet = toEquipSet
+    end
+end
+
 local function GameTooltipChangeHandler(forceRunHandler, debugString)
-    if getProfHasRun and (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
+
+    -- do nothing if profession data has not been set
+    if not getProfHasRun then
+        return
+    end
+
+    if not (mounted == IsMounted()) or (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
         if (inDebugMode) then
             DEFAULT_CHAT_FRAME:AddMessage(debugString)
         end
         
+        mounted = IsMounted()
+
         -- update local variables for tooltiptext
         GameTooltipLine1 = GameTooltipTextLeft1:GetText()
         GameTooltipLine2 = GameTooltipTextLeft2:GetText()
         GameTooltipLine3 = GameTooltipTextLeft3:GetText()
-        
+
         if not isCasting then
             -- Call the Handlers for each Profession
-            SkinningHandler()
-            HerbalismHandler()
-            MiningHandler()
-            FishingHandler()
+            UpdateGear()
         end
     end
 end
@@ -447,35 +522,6 @@ end
 GameTooltip:HookScript("OnUpdate", ToolTipOnUpdate)
 
 -- Delay lookup of Profession values for 1.5s to allow ItemRack to Load
-local waitTable = {}
-local waitFrame = nil
-
-function cagc_wait(delay, func, ...)
-  if(type(delay) ~= "number" or type(func) ~= "function") then
-    return false
-  end
-  if not waitFrame then
-    waitFrame = CreateFrame("Frame", nil, UIParent)
-    waitFrame:SetScript("OnUpdate", function (self, elapse)
-      for i = 1, #waitTable do
-        local waitRecord = tremove(waitTable, i)
-        local d = tremove(waitRecord, 1)
-        local f = tremove(waitRecord, 1)
-        local p = tremove(waitRecord, 1)
-        if d > elapse then
-          tinsert(waitTable, i, {d - elapse, f, p})
-          i = i + 1
-        else
-          i = i - 1
-          f(unpack(p))
-        end
-      end
-    end)
-  end
-  tinsert(waitTable, {delay, func, {...}})
-  return true
-end
-
 local function initialiseProfessions()
     cagc_wait(1.5, GetProf)
 end
@@ -502,12 +548,20 @@ local function StopCastingHandler(self, event, ...)
     end
 end
 
-local StopCastingFrame = CreateFrame("Frame")
-StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_STOP")
-StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_START")
-StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
-StopCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
-StopCastingFrame:SetScript("OnEvent", StopCastingHandler)
+local ChangeCastingFrame = CreateFrame("Frame")
+ChangeCastingFrame:RegisterEvent("UNIT_SPELLCAST_STOP")
+ChangeCastingFrame:RegisterEvent("UNIT_SPELLCAST_START")
+ChangeCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP")
+ChangeCastingFrame:RegisterEvent("UNIT_SPELLCAST_CHANNEL_START")
+ChangeCastingFrame:SetScript("OnEvent", StopCastingHandler)
+
+local function loopCheck()
+    if not (mounted == IsMounted()) then
+        GameTooltipChangeHandler(false, "Mount Status Change")
+    end
+end
+local LoopFrame = CreateFrame("Frame")
+LoopFrame:SetScript("OnUpdate", loopCheck)
 
 -- Register slash commands
 SlashCmdList["CAGC"] = CAGCHandler;
