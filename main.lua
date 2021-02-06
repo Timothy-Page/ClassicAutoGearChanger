@@ -1,5 +1,5 @@
 SLASH_CAGC1 = "/CAGC"
-local inDebugMode = false
+local inDebugMode = true
 local inDeepDebugMode = false
 
 local isSkinner = false
@@ -22,6 +22,7 @@ local getProfHasRun = false
 local isCasting = false
 
 local mounted = IsMounted()
+local inCombat = InCombatLockdown()
 
 local currentSet = "None"
 
@@ -479,20 +480,21 @@ local function GameTooltipChangeHandler(forceRunHandler, debugString)
     if not getProfHasRun then
         return
     end
-
-    if not (mounted == IsMounted()) or (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
+    
+    if not (inCombat == InCombatLockdown()) or not (mounted == IsMounted()) or (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
         if (inDebugMode) then
             DEFAULT_CHAT_FRAME:AddMessage(debugString)
         end
         
         mounted = IsMounted()
+        inCombat = InCombatLockdown()
 
         -- update local variables for tooltiptext
         GameTooltipLine1 = GameTooltipTextLeft1:GetText()
         GameTooltipLine2 = GameTooltipTextLeft2:GetText()
         GameTooltipLine3 = GameTooltipTextLeft3:GetText()
 
-        if not isCasting then
+        if not isCasting and not inCombat then
             -- Call the Handlers for each Profession
             UpdateGear()
         end
@@ -558,9 +560,25 @@ local function loopCheck()
     if not (mounted == IsMounted()) then
         GameTooltipChangeHandler(false, "Mount Status Change")
     end
+    if not (inCombat == InCombatLockdown()) then
+        print("Player Combat Status: " .. tostring(InCombatLockdown()))
+        GameTooltipChangeHandler(false, "Combat Status Changed")
+    end
 end
 local LoopFrame = CreateFrame("Frame")
 LoopFrame:SetScript("OnUpdate", loopCheck)
 
+local function CombatHandler(self, event, ...)
+    print("Event was fired: " .. event)
+end
+
+local CombatFrame = CreateFrame("Frame")
+CombatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
+CombatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
+ChangeCastingFrame:SetScript("OnEvent", CombatHandler)
+
 -- Register slash commands
 SlashCmdList["CAGC"] = CAGCHandler;
+
+
+-- PLAYER_EQUIPMENT_CHANGED, PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED
