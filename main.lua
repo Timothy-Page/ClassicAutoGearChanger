@@ -568,15 +568,6 @@ end
 local LoopFrame = CreateFrame("Frame")
 LoopFrame:SetScript("OnUpdate", loopCheck)
 
-local function CombatHandler(self, event, ...)
-    print("Event was fired: " .. event)
-end
-
-local CombatFrame = CreateFrame("Frame")
-CombatFrame:RegisterEvent("PLAYER_REGEN_DISABLED")
-CombatFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
-ChangeCastingFrame:SetScript("OnEvent", CombatHandler)
-
 -- Register slash commands
 SlashCmdList["CAGC"] = CAGCHandler;
 
