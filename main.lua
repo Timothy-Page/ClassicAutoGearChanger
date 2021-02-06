@@ -1,5 +1,5 @@
 SLASH_CAGC1 = "/CAGC"
-local inDebugMode = true
+local inDebugMode = false
 local inDeepDebugMode = false
 
 local isSkinner = false
