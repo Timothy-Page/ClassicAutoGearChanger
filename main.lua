@@ -1,3 +1,5 @@
+local addonName, ClassicAutoGearChanger = ...
+
 SLASH_CAGC1 = "/CAGC"
 local inDebugMode = false
 local inDeepDebugMode = false
@@ -20,6 +22,8 @@ local fishingLine = 0
 local getProfHasRun = false
 
 local isCasting = false
+
+local SkillLevelGap = 10
 
 local mounted = IsMounted()
 local inCombat = InCombatLockdown()
@@ -165,213 +169,49 @@ local function SkinningRankNeeded(level)
 end
 
 local function HerbalismRankNeeded(herb)
-    local rankNeeded
-    if (herb == "Peacebloom") then
-        rankNeeded = 1
-    elseif (herb == "Silverleaf") then
-        rankNeeded = 1
-    elseif (herb == "Earthroot") then
-        rankNeeded = 15
-    elseif (herb == "Mageroyal") then
-        rankNeeded = 50
-    elseif (herb == "Briarthorn") then
-        rankNeeded = 70
-    elseif (herb == "Stranglekelp") then
-        rankNeeded = 85
-    elseif (herb == "Bruiseweed") then
-        rankNeeded = 100
-    elseif (herb == "Wild Steelbloom") then
-        rankNeeded = 115
-    elseif (herb == "Grave Moss") then
-        rankNeeded = 120
-    elseif (herb == "Kingsblood") then
-        rankNeeded = 125
-    elseif (herb == "Liferoot") then
-        rankNeeded = 150
-    elseif (herb == "Fadeleaf") then
-        rankNeeded = 160
-    elseif (herb == "Goldthorn") then
-        rankNeeded = 170
-    elseif (herb == "Khadgar's Whisker") then
-        rankNeeded = 185
-    elseif (herb == "Wintersbite") then
-        rankNeeded = 195
-    elseif (herb == "Firebloom") then
-        rankNeeded = 205
-    elseif (herb == "Purple Lotus") then
-        rankNeeded = 210
-    elseif (herb == "Arthas' Tears") then
-        rankNeeded = 220
-    elseif (herb == "Sungrass") then
-        rankNeeded = 230
-    elseif (herb == "Blindweed") then
-        rankNeeded = 235
-    elseif (herb == "Ghost Mushroom") then
-        rankNeeded = 245
-    elseif (herb == "Gromsblood") then
-        rankNeeded = 250
-    elseif (herb == "Golden Sansam") then
-        rankNeeded = 260
-    elseif (herb == "Dreamfoil") then
-        rankNeeded = 270
-    elseif (herb == "Mountain Silversage") then
-        rankNeeded = 280
-    elseif (herb == "Plaguebloom") then
-        rankNeeded = 285
-    elseif (herb == "Icecap") then
-        rankNeeded = 290
-    elseif (herb == "Black Lotus") then
-        rankNeeded = 300
-    elseif (herb == "Felweed") then
-        rankNeeded = 300
-    elseif (herb == "Dreaming Glory") then
-        rankNeeded = 315
-    elseif (herb == "Ragveil") then
-        rankNeeded = 325
-    elseif (herb == "Flame Cap") then
-        rankNeeded = 335
-    elseif (herb == "Terocone") then
-        rankNeeded = 325
-    elseif (herb == "Ancient Lichen") then
-        rankNeeded = 340
-    elseif (herb == "Netherbloom") then
-        rankNeeded = 350
-    elseif (herb == "Nightmare Vine") then
-        rankNeeded = 365
-    elseif (herb == "Mana Thistle") then
-        rankNeeded = 375
-    else
-        rankNeeded = 375
+    local rankNeeded = ClassicAutoGearChanger.herbNodes[herb]
+
+    if rankNeeded == nil then
+        rankNeeded = ClassicAutoGearChanger.herbNodes["CatchAll"]
     end
+
+    if inDebugMode then 
+        print("Herb Skill Needed to pick " .. herb .. " is: " .. tostring(rankNeeded))
+    end
+
     return rankNeeded
 end
 
 local function MiningRankNeeded(ore)
-    local rankNeeded
-    if (ore == "Copper Vein") then
-        rankNeeded = 1
-    elseif (ore == "Tin Vein") then
-        rankNeeded = 65
-    elseif (ore == "Silver Vein") then
-        rankNeeded = 75
-    elseif (ore == "Iron Deposit") then
-        rankNeeded = 125
-    elseif (ore == "Gold Vein") then
-        rankNeeded = 155
-    elseif (ore == "Mithril Deposit" or ore == "Ooze Covered Mithril Deposit") then
-        rankNeeded = 175
-    elseif (ore == "Truesilver Deposit" or ore == "Ooze Covered Truesilver Deposit") then
-        rankNeeded = 230
-    elseif (ore == "Dark Iron Deposit") then
-        rankNeeded = 230
-    elseif (ore == "Small Thorium Vein" or ore == "Ooze Covered Thorium Vein") then
-        rankNeeded = 245
-    elseif (ore == "Rich Thorium Vein" or ore == "Ooze Covered Rich Thorium Vein" or ore == "Hakkari Thorium Vein") then
-        rankNeeded = 275
-    elseif (ore == "Obsidian Chunk" or ore == "Large Obsidian Chunk") then
-        rankNeeded = 305
-    elseif (ore == "Fel Iron Deposit") then
-        rankNeeded = 275
-    elseif (ore == "Nethercite Deposit") then
-        rankNeeded = 275
-    elseif (ore == "Adamantite Deposit") then
-        rankNeeded = 325
-    elseif (ore == "Rich Adamantite Deposit") then
-        rankNeeded = 350
-    elseif (ore == "Khorium Vein") then
-        rankNeeded = 375
-    elseif (ore == "Ancient Gem Vein") then
-        rankNeeded = 375
-    else
-        rankNeeded = 375
+    local rankNeeded = ClassicAutoGearChanger.miningNodes[ore]
+
+    if rankNeeded == nil then
+        rankNeeded = ClassicAutoGearChanger.miningNodes["CatchAll"]
     end
+
+    if inDebugMode then 
+        print("Mining Skill Needed to mine " .. ore .. " is: " .. tostring(rankNeeded))
+    end
+
     return rankNeeded
 end
 
 local function FishingRankNeeded(pool)
-    local rankNeeded = 305
+    local rankNeeded = ClassicAutoGearChanger.fishingNodes[pool]["garentee"]
 
-    return rankNeeded
-end
-
-local fishingPools = {
-    "Floating Wreckage",
-    "Patch of Elemental Water",
-    "Floating Debris",
-    "Oil Spill",
-    "Firefin Snapper School",
-    "Greater Sagefish School",
-    "Oily Blackmouth School",
-    "Sagefish School",
-    "School of Deviate Fish",
-    "Stonescale Eel Swarm",
-    "Muddy Churning Water",
-    "Highland Mixed School",
-    "Pure Water",
-    "Bluefish School",
-    "Feltail School",
-    "Brackish Mixed School",
-    "Mudfish School",
-    "School of Darter",
-    "Sporefish School",
-    "Steam Pump Flotsam",
-    "School of Tastyfish",
-    "Borean Man O' War School",
-    "Deep Sea Monsterbelly School",
-    "Dragonfin Angelfish School",
-    "Fangtooth Herring School",
-    "Floating Wreckage Pool",
-    "Glacial Salmon School",
-    "Glassfin Minnow School",
-    "Imperial Manta Ray School",
-    "Moonglow Cuttlefish School",
-    "Musselback Sculpin School",
-    "Nettlefish School",
-    "Strange Pool",
-    "Schooner Wreckage",
-    "Waterlogged Wreckage Pool",
-    "Bloodsail Wreckage Pool",
-    "Mixed Ocean School",
-    -- Begin tediuous prefix mapping
-    "Lesser Sagefish School",
-    "Lesser Oily Blackmouth School",
-    "Sparse Oily Blackmouth School",
-    "Abundant Oily Blackmouth School",
-    "Teeming Oily Blackmouth School",
-    "Lesser Firefin Snapper School",
-    "Sparse Firefin Snapper School",
-    "Abundant Firefin Snapper School",
-    "Teeming Firefin Snapper School",
-    "Lesser Floating Debris",
-    "Sparse Schooner Wreckage",
-    "Abundant Bloodsail Wreckage",
-    "Teeming Floating Wreckage",
-    "Albino Cavefish School",
-    "Algaefin Rockfish School",
-    "Blackbelly Mudfish School",
-    "Fathom Eel Swarm",
-    "Highland Guppy School",
-    "Mountain Trout School",
-    "Pool of Fire",
-    "Shipwreck Debris",
-    "Deepsea Sagefish School",
-    "Fishing Bobber"
-}
-
-local function has_value (tab, val)
-    for index, value in ipairs(tab) do
-        if value == val then
-            return true
-        end
+    if inDebugMode then 
+        print("Fishing Skill Needed to Fish " .. pool .. " is: " .. tostring(rankNeeded))
     end
 
-    return false
+    return rankNeeded
 end
 
 local function isFishingPool(textString)
     local isFishingPool = false
 
-    if has_value(fishingPools, textString) then
+    local fishingPool = ClassicAutoGearChanger.fishingNodes[textString]
+
+    if fishingPool ~= nil then
         isFishingPool = true
     end
 
@@ -381,7 +221,7 @@ end
 local function SkinningHandler()
     if (isSkinner) then
         UpdateSkill("Skinning")
-        if(GameTooltipLine3 == "Skinnable" and SkinningRankNeeded(UnitLevel("Mouseover")) > skinningRank) then
+        if(GameTooltipLine3 == "Skinnable" and SkinningRankNeeded(UnitLevel("Mouseover")) > skinningRank - SkillLevelGap) then
             return true
         else
             return false
@@ -392,7 +232,7 @@ end
 local function HerbalismHandler()
     if (isHerber) then
         UpdateSkill("Herbalism")
-        if(GameTooltipLine2 == "Herbalism" and HerbalismRankNeeded(GameTooltipLine1) > herbingRank) then
+        if(GameTooltipLine2 == "Herbalism" and HerbalismRankNeeded(GameTooltipLine1) > herbingRank - SkillLevelGap) then
             return true
         else
             return false
@@ -403,7 +243,7 @@ end
 local function MiningHandler()
     if (isMinner) then
         UpdateSkill("Mining")
-        if(GameTooltipLine2 == "Mining" and MiningRankNeeded(GameTooltipLine1) > minningRank) then
+        if(GameTooltipLine2 == "Mining" and MiningRankNeeded(GameTooltipLine1) > minningRank - SkillLevelGap) then
             return true
         else
             return false
@@ -411,21 +251,25 @@ local function MiningHandler()
     end
 end
 
-local function FishingHandler()
+local function FishingHandler(FishingType)
     if (isFishing) then
         UpdateSkill("Fishing")
-        if(isFishingPool(GameTooltipLine1) and FishingRankNeeded(GameTooltipLine1) > fishingRank) then
-            return true
-        else
-            return false
+        if isFishingPool(GameTooltipLine1) then
+            if (FishingType == "BasicFishing" and FishingRankNeeded(GameTooltipLine1) <= fishingRank) then
+                return true
+            elseif (FishingType == "Fishing" and FishingRankNeeded(GameTooltipLine1) > fishingRank) then
+                return true
+            end
         end
     end
+    
+    return false
 end
 
 local function MountHandler()
     if IsMounted() and not UnitOnTaxi("player") then
         local inInstance, instanceType = IsInInstance()
-        if instanceType == "pvp" or instanceType == "arena" or instanceType == "party" or instanceType == "raid" then
+        if instanceType == "arena" or instanceType == "party" or instanceType == "raid" then
             return false
         else
             return true
@@ -440,7 +284,8 @@ local function UpdateGear()
     local equipSkinning = SkinningHandler()
     local equipHerbalism = HerbalismHandler()
     local equipMining = MiningHandler()
-    local equipFishing = FishingHandler()
+    local equipBasicFishing = FishingHandler("BasicFishing")
+    local equipFishing = FishingHandler("Fishing")
     local equipMount = MountHandler()
 
     local toEquipSet = "None"
@@ -453,6 +298,8 @@ local function UpdateGear()
         toEquipSet = "Herbalism"
     elseif equipMining then
         toEquipSet = "Mining"
+    elseif equipBasicFishing then
+        toEquipSet = "BasicFishing"
     elseif equipFishing then
         toEquipSet = "Fishing"
     end
@@ -561,7 +408,6 @@ local function loopCheck()
         GameTooltipChangeHandler(false, "Mount Status Change")
     end
     if not (inCombat == InCombatLockdown()) then
-        print("Player Combat Status: " .. tostring(InCombatLockdown()))
         GameTooltipChangeHandler(false, "Combat Status Changed")
     end
 end

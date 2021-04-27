@@ -4,6 +4,8 @@
 ## Version: 1.1.5
 ## Dependencies: ItemRack
 
+Lib\Nodes.lua
+
 main.lua
 
 # This addon requires ItemRack and saved sets ("Mining", "Herbalism", "Fishing", "Skinning" and "Mount") to work correctly.
