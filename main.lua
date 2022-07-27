@@ -26,9 +26,15 @@ local isCasting = false
 local SkillLevelGap = 10
 
 local mounted = IsMounted()
+local isFlightForm = false
 local inCombat = InCombatLockdown()
 
 local currentSet = "None"
+
+local flightFormBuffs = {
+    ["Swift Flight Form"] = true,
+    ["Flight Form"] = true
+}
 
 --Create delay function
 local waitTable = {}
@@ -58,6 +64,18 @@ function cagc_wait(delay, func, ...)
   end
   tinsert(waitTable, {delay, func, {...}})
   return true
+end
+
+local function checkIfFlightForm()
+    value = false
+
+    for buff in pairs(flightFormBuffs) do
+        if AuraUtil.FindAuraByName(buff, "player") then
+            value = true
+        end
+    end
+
+    return value
 end
 
 --Keep Track of Tooltip text to check if it has updated
@@ -141,6 +159,8 @@ local function CAGCHandler(parameter)
     if(string.len(parameter) > 0) then
         if (parameter == "GetProf") then
             GetProf()
+        elseif (parameter == "FlightForm") then
+            print("FlightForm: " .. tostring(checkIfFlightForm()))
         else
             UpdateSkill(parameter)
             PrintSkill(parameter)
@@ -279,6 +299,14 @@ local function MountHandler()
     end
 end
 
+local function FlightFormHandler()
+    if checkIfFlightForm() then
+        return true
+    else
+        return false
+    end
+end
+
 local function UpdateGear()
 
     local equipSkinning = SkinningHandler()
@@ -287,6 +315,7 @@ local function UpdateGear()
     local equipBasicFishing = FishingHandler("BasicFishing")
     local equipFishing = FishingHandler("Fishing")
     local equipMount = MountHandler()
+    local equipFlightForm = FlightFormHandler()
 
     local toEquipSet = "None"
 
@@ -302,6 +331,8 @@ local function UpdateGear()
         toEquipSet = "BasicFishing"
     elseif equipFishing then
         toEquipSet = "Fishing"
+    elseif equipFlightForm then
+        toEquipSet = "FlightForm"
     end
     
     if not (toEquipSet == currentSet) and not (currentSet == "None") then
@@ -328,13 +359,14 @@ local function GameTooltipChangeHandler(forceRunHandler, debugString)
         return
     end
     
-    if not (inCombat == InCombatLockdown()) or not (mounted == IsMounted()) or (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
+    if not (inCombat == InCombatLockdown()) or not (isFlightForm == checkIfFlightForm()) or not (mounted == IsMounted()) or (not (GameTooltipLine1 == GameTooltipTextLeft1:GetText() and GameTooltipLine2 == GameTooltipTextLeft2:GetText() and GameTooltipLine3 == GameTooltipTextLeft3:GetText()) or forceRunHandler) then
         if (inDebugMode) then
             DEFAULT_CHAT_FRAME:AddMessage(debugString)
         end
         
         mounted = IsMounted()
         inCombat = InCombatLockdown()
+        isFlightForm = checkIfFlightForm()
 
         -- update local variables for tooltiptext
         GameTooltipLine1 = GameTooltipTextLeft1:GetText()
@@ -409,6 +441,9 @@ local function loopCheck()
     end
     if not (inCombat == InCombatLockdown()) then
         GameTooltipChangeHandler(false, "Combat Status Changed")
+    end
+    if not (isFlightForm == checkIfFlightForm()) then
+        GameTooltipChangeHandler(false, "Flight Form Changed")
     end
 end
 local LoopFrame = CreateFrame("Frame")

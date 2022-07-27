@@ -1,7 +1,7 @@
 ## Interface: 20501
 ## Title: ClassicAutoGearChanger
 ## Author: Tranzalore
-## Version: 1.1.7
+## Version: 1.1.8
 ## Dependencies: ItemRack
 
 Lib\Nodes.lua
