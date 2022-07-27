@@ -1,4 +1,4 @@
-## Interface: 20501
+## Interface: 20504
 ## Title: ClassicAutoGearChanger
 ## Author: Tranzalore
 ## Version: 1.1.8
